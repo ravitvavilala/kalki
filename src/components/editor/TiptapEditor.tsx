@@ -21,7 +21,7 @@ import { Card } from "@/components/ui/Card";
 const lowlight = createLowlight(common);
 
 interface TiptapEditorProps {
-    onChange: (json: any, html: string) => void;
+    onChange: (json: unknown, html: string) => void;
 }
 
 export function TiptapEditor({ onChange }: TiptapEditorProps) {
@@ -51,7 +51,7 @@ export function TiptapEditor({ onChange }: TiptapEditorProps) {
 
     if (!editor) return null;
 
-    const MenuButton = ({ onClick, isActive, children, title }: any) => (
+    const MenuButton = ({ onClick, isActive, children, title }: { onClick: () => void, isActive?: boolean, children: React.ReactNode, title?: string }) => (
         <button
             onClick={onClick}
             title={title}

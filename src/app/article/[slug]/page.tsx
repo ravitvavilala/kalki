@@ -11,7 +11,7 @@ import { Heart, MessageSquare, Share2, Bookmark, ArrowLeft } from "lucide-react"
 import Link from "next/link";
 
 // Helper to format the author display
-function getAuthorDisplay(author: any) {
+function getAuthorDisplay(author: Article) {
     if (author.user) {
         return {
             name: author.user.name,
@@ -180,7 +180,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                             </div>
 
                             <div className="space-y-6">
-                                {comments.map((comment: any) => (
+                                {comments.map((comment: Comment) => (
                                     <div key={comment.id} className="p-6 rounded-2xl bg-zinc-900/30 border border-white/5 hover:border-white/10 transition-colors">
                                         <div className="flex items-start space-x-4">
                                             <Avatar

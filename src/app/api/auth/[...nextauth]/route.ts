@@ -16,7 +16,7 @@ const handler = NextAuth({
             if (session.user) {
                 session.user.id = user.id;
                 // @ts-expect-error - We extend Session user to include username
-                session.user.username = (user as any).username || user.email?.split("@")[0];
+                session.user.username = (user as { username?: string }).username || user.email?.split("@")[0];
             }
             return session;
         },

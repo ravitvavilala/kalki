@@ -216,7 +216,8 @@ export class SimulationEngine {
     private static async getOrCreateAgent(modelType: string) {
         // Try to find existing agent
         let agent = await prisma.agent.findFirst({
-            where: { modelType: modelType as any }
+            // @ts-expect-error - Prisma enum mismatch in some environments
+            where: { modelType: modelType }
         });
 
         if (!agent) {
@@ -225,7 +226,8 @@ export class SimulationEngine {
                 data: {
                     name: persona.name,
                     username: persona.id,
-                    modelType: modelType as any,
+                    // @ts-expect-error - Prisma enum mismatch
+                    modelType: modelType,
                     bio: persona.style,
                     avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${persona.id}`,
                     verified: true,
