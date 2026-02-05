@@ -1,218 +1,130 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { useSession } from "next-auth/react";
 import {
-    Search,
-    PenSquare,
     Bell,
-    Menu,
-    X,
-    Sparkles,
-    Compass,
-    Users,
-    Bot,
-    Hash,
-    Home,
+    Edit,
+    TrendingUp,
+    Bookmark,
+    Settings,
+    User,
+    LogOut,
+    Search
 } from "lucide-react";
-import { Button, Avatar } from "@/components/ui";
-import { cn } from "@/lib/utils";
-import type { FeedTab } from "@/types";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { Avatar } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
 
-interface NavigationProps {
-    activeTab?: FeedTab;
-    onTabChange?: (tab: FeedTab) => void;
-}
-
-const NAV_TABS: { id: FeedTab; label: string; icon: React.ElementType }[] = [
-    { id: "for-you", label: "For You", icon: Sparkles },
-    { id: "following", label: "Following", icon: Users },
-    { id: "humans", label: "Humans", icon: Users },
-    { id: "ai-agents", label: "AI Minds", icon: Bot },
-    { id: "topics", label: "Topics", icon: Hash },
-];
-
-export function Navigation({ activeTab = "for-you", onTabChange }: NavigationProps) {
-    const { data: session, status } = useSession();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isSearchOpen, setIsSearchOpen] = useState(false);
+export function Navigation() {
+    const { data: session } = useSession();
 
     return (
-        <header className="sticky top-0 z-50 glass border-b border-white/5">
-            <div className="mx-auto max-w-7xl px-4">
-                <div className="flex h-16 items-center justify-between gap-4">
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="relative">
-                            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-accent-human via-accent-ai to-accent-human flex items-center justify-center">
-                                <span className="text-lg font-bold text-white">K</span>
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-white/5">
+            <div className="container mx-auto px-4">
+                <div className="flex items-center justify-between h-16">
+                    {/* Logo & Search */}
+                    <div className="flex items-center space-x-8 flex-1">
+                        <Link href="/" className="flex items-center space-x-2 group">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">
+                                K
                             </div>
-                            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-accent-human to-accent-ai opacity-0 blur-lg group-hover:opacity-50 transition-opacity" />
-                        </div>
-                        <span className="text-xl font-bold text-gradient-kalki hidden sm:block">
-                            Kalki
-                        </span>
-                    </Link>
+                            <span className="font-bold text-xl tracking-tight hidden sm:block">Kalki</span>
+                        </Link>
 
-                    {/* Search Bar - Desktop */}
-                    <div className="hidden md:flex flex-1 max-w-xl mx-8">
-                        <div className="relative w-full group">
-                            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-ai transition-colors" />
+                        <div className="relative max-w-md w-full hidden md:block">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
                             <input
                                 type="text"
                                 placeholder="Search articles, humans, AI minds..."
-                                className="w-full rounded-full glass py-2.5 pl-11 pr-4 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-ai/50 transition-all"
+                                className="w-full bg-zinc-900/50 border border-white/5 rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:border-white/20 transition-colors"
                             />
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3">
-                        {/* Mobile Search Toggle */}
-                        <button
-                            onClick={() => setIsSearchOpen(!isSearchOpen)}
-                            className="md:hidden p-2 rounded-full hover:bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors"
-                        >
-                            <Search className="h-5 w-5" />
-                        </button>
+                    <div className="flex items-center space-x-4">
+                        {session ? (
+                            <>
+                                <Link href="/write">
+                                    <Button variant="ghost" size="sm" className="hidden sm:flex text-zinc-400 hover:text-white hover:bg-white/5">
+                                        <Edit className="w-4 h-4 mr-2" />
+                                        Write
+                                    </Button>
+                                </Link>
+                                <button className="p-2 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full relative">
+                                    <Bell className="w-5 h-5" />
+                                    <span className="absolute top-2 right-2 w-2 h-2 bg-blue-500 rounded-full border-2 border-[#050505]" />
+                                </button>
 
-                        {/* Write Button */}
-                        <Link href="/write">
-                            <Button className="gap-2 bg-gradient-to-r from-accent-human to-accent-ai hover:opacity-90 border-0 shadow-glow-sm">
-                                <PenSquare className="h-4 w-4" />
-                                <span className="hidden sm:inline">Write</span>
-                            </Button>
-                        </Link>
+                                <div className="h-8 w-[1px] bg-white/5 mx-2" />
 
-                        {/* Notifications */}
-                        <button className="relative p-2 rounded-full hover:bg-bg-tertiary text-text-secondary hover:text-text-primary transition-colors">
-                            <Bell className="h-5 w-5" />
-                            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent-ai animate-pulse" />
-                        </button>
+                                <div className="group relative">
+                                    <Avatar
+                                        src={session.user?.image || undefined}
+                                        name={session.user?.name || "User"}
+                                        size="sm"
+                                        className="cursor-pointer ring-0 group-hover:ring-2 ring-white/10 transition-all"
+                                    />
 
-                        {/* Profile / Auth */}
-                        {status === "loading" ? (
-                            <div className="h-8 w-8 rounded-full bg-bg-tertiary animate-pulse" />
-                        ) : session?.user ? (
-                            <Link href={`/profile/${session.user.username}`}>
-                                <Avatar
-                                    src={session.user.image}
-                                    fallback={session.user.name}
-                                    isAI={false}
-                                    size="sm"
-                                    className="ring-2 ring-accent-human/30 hover:ring-accent-human/60 transition-all cursor-pointer"
-                                />
-                            </Link>
+                                    {/* Dropdown menu */}
+                                    <div className="absolute right-0 mt-2 w-56 p-2 bg-black border border-white/10 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                                        <div className="p-2 mb-2 border-b border-white/5">
+                                            <p className="text-sm font-medium">{session.user?.name}</p>
+                                            <p className="text-xs text-zinc-500 truncate">{session.user?.email}</p>
+                                        </div>
+                                        <Link href={`/profile/${session.user?.name}`} className="flex items-center space-x-2 p-2 hover:bg-white/5 rounded-lg text-sm transition-colors">
+                                            <User className="w-4 h-4" />
+                                            <span>Profile</span>
+                                        </Link>
+                                        <Link href="/bookmarks" className="flex items-center space-x-2 p-2 hover:bg-white/5 rounded-lg text-sm transition-colors">
+                                            <Bookmark className="w-4 h-4" />
+                                            <span>Bookmarks</span>
+                                        </Link>
+                                        <Link href="/settings" className="flex items-center space-x-2 p-2 hover:bg-white/5 rounded-lg text-sm transition-colors">
+                                            <Settings className="w-4 h-4" />
+                                            <span>Settings</span>
+                                        </Link>
+                                        <div className="h-[1px] bg-white/5 my-2" />
+                                        <button
+                                            onClick={() => signOut()}
+                                            className="w-full flex items-center space-x-2 p-2 hover:bg-red-500/10 text-red-500 rounded-lg text-sm transition-colors"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            <span>Sign Out</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
                         ) : (
                             <Link href="/login">
-                                <Button size="sm" variant="secondary">
+                                <Button size="sm" className="bg-white text-black hover:bg-white/90">
                                     Login
                                 </Button>
                             </Link>
                         )}
-
-                        {/* Mobile Menu Toggle */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="md:hidden p-2 rounded-full hover:bg-bg-tertiary text-text-secondary"
-                        >
-                            {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                        </button>
                     </div>
                 </div>
 
-                {/* Mobile Search */}
-                <AnimatePresence>
-                    {isSearchOpen && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="md:hidden overflow-hidden"
-                        >
-                            <div className="py-3">
-                                <div className="relative">
-                                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search..."
-                                        className="w-full rounded-full glass py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent-ai/50"
-                                        autoFocus
-                                    />
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* Tab Navigation - Desktop */}
-                <nav className="hidden md:flex items-center gap-1 -mb-px">
-                    {NAV_TABS.map((tab) => {
-                        const Icon = tab.icon;
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => onTabChange?.(tab.id)}
-                                className={cn(
-                                    "relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
-                                    isActive
-                                        ? "text-accent-ai"
-                                        : "text-text-secondary hover:text-text-primary"
-                                )}
-                            >
-                                <Icon className="h-4 w-4" />
-                                <span>{tab.label}</span>
-                                {isActive && (
-                                    <motion.div
-                                        layoutId="activeTab"
-                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-accent-human to-accent-ai"
-                                    />
-                                )}
-                            </button>
-                        );
-                    })}
-                </nav>
-
-                {/* Mobile Menu */}
-                <AnimatePresence>
-                    {isMobileMenuOpen && (
-                        <motion.nav
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="md:hidden overflow-hidden border-t border-white/5"
-                        >
-                            <div className="py-4 space-y-1">
-                                {NAV_TABS.map((tab) => {
-                                    const Icon = tab.icon;
-                                    const isActive = activeTab === tab.id;
-                                    return (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => {
-                                                onTabChange?.(tab.id);
-                                                setIsMobileMenuOpen(false);
-                                            }}
-                                            className={cn(
-                                                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors",
-                                                isActive
-                                                    ? "bg-accent-ai/10 text-accent-ai"
-                                                    : "text-text-secondary hover:bg-bg-tertiary hover:text-text-primary"
-                                            )}
-                                        >
-                                            <Icon className="h-5 w-5" />
-                                            <span className="font-medium">{tab.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </motion.nav>
-                    )}
-                </AnimatePresence>
+                {/* Secondary Nav */}
+                <div className="flex items-center space-x-6 h-12 overflow-x-auto no-scrollbar md:justify-center">
+                    <Link href="/" className="text-sm font-medium text-white border-b-2 border-white flex items-center h-full px-2">
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        For You
+                    </Link>
+                    <Link href="/following" className="text-sm font-medium text-zinc-500 hover:text-white transition-colors flex items-center h-full px-2">
+                        Following
+                    </Link>
+                    <Link href="/humans" className="text-sm font-medium text-zinc-500 hover:text-white transition-colors flex items-center h-full px-2">
+                        Humans
+                    </Link>
+                    <Link href="/ai-minds" className="text-sm font-medium text-zinc-500 hover:text-white transition-colors flex items-center h-full px-2">
+                        AI Minds
+                    </Link>
+                    <Link href="/topics" className="text-sm font-medium text-zinc-500 hover:text-white transition-colors flex items-center h-full px-2">
+                        Topics
+                    </Link>
+                </div>
             </div>
-        </header>
+        </nav>
     );
 }

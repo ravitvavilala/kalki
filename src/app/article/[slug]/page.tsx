@@ -1,32 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { Navigation, Sidebar } from "@/components/layout";
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
-import {
-    Heart,
-    MessageCircle,
-    Bookmark,
-    Share2,
-    ArrowLeft,
-    MoreHorizontal
-} from "lucide-react";
-import { Navigation } from "@/components/layout";
-import { Avatar, Button, Badge, AIBadge, AuthorBadge, CommentTypeBadge } from "@/components/ui";
-import { formatDate, formatNumber } from "@/lib/utils";
-import type { Article, Comment, Author } from "@/types";
+import type { Article, Comment } from "@/types";
+import { Avatar } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Heart, MessageSquare, Share2, Bookmark, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-function getAuthorInfo(author: Author) {
-    if (author.type === "human") {
+// Helper to format the author display
+function getAuthorDisplay(author: any) {
+    if (author.user) {
         return {
-            name: author.user.name || author.user.username,
+            name: author.user.name,
             username: author.user.username,
             avatar: author.user.avatar,
             bio: author.user.bio,
             isAI: false,
         };
-    } else {
+    } else if (author.agent) {
         return {
             name: author.agent.name,
             username: author.agent.username,
@@ -40,7 +34,7 @@ function getAuthorInfo(author: Author) {
 }
 
 export default function ArticlePage({ params }: { params: { slug: string } }) {
-    const { data: session } = useSession();
+    useSession(); // Keep hook but we don't need the value right now
     const [article, setArticle] = useState<Article | null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -50,18 +44,17 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         const fetchArticle = async () => {
             setIsLoading(true);
             try {
-                const res = await fetch(`/api/articles/${params.slug}`);
-                if (!res.ok) {
-                    if (res.status === 404) throw new Error("Article not found");
-                    throw new Error("Failed to load article");
+                const response = await fetch(`/api/articles/${params.slug}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setArticle(data);
+                    setComments(data.comments || []);
+                } else {
+                    setError("Article not found");
                 }
-                const data = await res.json();
-                setArticle(data);
-                if (data.comments) {
-                    setComments(data.comments);
-                }
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err) {
+                console.error("Failed to fetch article:", err);
+                setError("An error occurred while loading the article");
             } finally {
                 setIsLoading(false);
             }
@@ -72,251 +65,170 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-bg-primary">
-                <Navigation />
-                <main className="mx-auto max-w-4xl px-4 py-8">
-                    <div className="animate-pulse space-y-8">
-                        <div className="h-8 w-24 bg-bg-tertiary rounded" />
-                        <div className="h-12 w-3/4 bg-bg-tertiary rounded" />
-                        <div className="h-6 w-1/2 bg-bg-tertiary rounded" />
-                        <div className="h-96 w-full bg-bg-tertiary rounded glass-card" />
-                    </div>
-                </main>
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+                <div className="animate-spin h-8 w-8 border-t-2 border-blue-500 rounded-full" />
             </div>
         );
     }
 
     if (error || !article) {
         return (
-            <div className="min-h-screen bg-bg-primary">
-                <Navigation />
-                <main className="mx-auto max-w-4xl px-4 py-8 text-center">
-                    <div className="glass-card p-12">
-                        <h1 className="text-2xl font-bold text-text-primary mb-4">
-                            {error || "Article not found"}
-                        </h1>
-                        <Link href="/">
-                            <Button>Return Home</Button>
-                        </Link>
-                    </div>
-                </main>
+            <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-4">
+                <h1 className="text-2xl font-bold mb-4">{error}</h1>
+                <Link href="/">
+                    <Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Home</Button>
+                </Link>
             </div>
         );
     }
 
-    const authorInfo = getAuthorInfo(article.author);
+    const author = getAuthorDisplay(article);
 
     return (
-        <div className="min-h-screen bg-bg-primary">
+        <div className="min-h-screen bg-[#050505] text-white">
             <Navigation />
 
-            <main className="mx-auto max-w-4xl px-4 py-8">
-                {/* Back button */}
-                <Link
-                    href="/"
-                    className="mb-8 inline-flex items-center gap-2 text-text-secondary hover:text-text-primary"
-                >
-                    <ArrowLeft className="h-4 w-4" />
-                    <span>Back to feed</span>
-                </Link>
+            <main className="container mx-auto px-4 pt-24 pb-12">
+                <div className="flex flex-col lg:flex-row gap-12">
+                    {/* Content Area */}
+                    <div className="flex-1 max-w-4xl">
+                        {/* Article Header */}
+                        <header className="mb-12">
+                            <div className="flex items-center space-x-2 text-zinc-500 text-sm mb-6">
+                                <Link href="/" className="hover:text-zinc-300 transition-colors">Home</Link>
+                                <span>/</span>
+                                <span className="text-zinc-400">Article</span>
+                            </div>
 
-                <article>
-                    {/* Article Header */}
-                    <header className="mb-8">
-                        <h1 className="mb-4 text-4xl font-bold leading-tight text-text-primary">
-                            {article.title}
-                        </h1>
+                            <h1 className="text-4xl lg:text-6xl font-bold mb-6 leading-tight tracking-tight">
+                                {article.title}
+                            </h1>
 
-                        {article.subtitle && (
-                            <p className="mb-6 text-xl text-text-secondary">
-                                {article.subtitle}
-                            </p>
-                        )}
-
-                        {/* Author info */}
-                        <div className="flex items-center gap-4">
-                            <Link href={`/profile/${authorInfo.username}`}>
-                                <Avatar
-                                    src={authorInfo.avatar}
-                                    alt={authorInfo.name}
-                                    fallback={authorInfo.name}
-                                    isAI={authorInfo.isAI}
-                                    size="lg"
-                                />
-                            </Link>
-
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <Link
-                                        href={`/profile/${authorInfo.username}`}
-                                        className="font-semibold text-text-primary hover:underline"
-                                    >
-                                        {authorInfo.name}
-                                    </Link>
-                                    <AuthorBadge isAI={authorInfo.isAI} />
-                                    {authorInfo.isAI && authorInfo.modelType && (
-                                        <AIBadge modelType={authorInfo.modelType} verified={authorInfo.verified} />
-                                    )}
-                                </div>
-                                <p className="text-sm text-text-secondary">
-                                    {article.readTime} min read · {formatDate(article.publishedAt || article.createdAt)}
+                            {article.subtitle && (
+                                <p className="text-xl text-zinc-400 mb-8 font-light italic">
+                                    {article.subtitle}
                                 </p>
+                            )}
+
+                            {/* Author Info */}
+                            <div className="flex items-center justify-between p-6 rounded-2xl bg-zinc-900/30 border border-white/5 backdrop-blur-sm">
+                                <div className="flex items-center space-x-4">
+                                    <Avatar
+                                        src={author?.avatar}
+                                        name={author?.name}
+                                        size="lg"
+                                        className="ring-2 ring-white/5"
+                                    />
+                                    <div>
+                                        <div className="flex items-center space-x-2">
+                                            <h4 className="font-bold text-lg">{author?.name}</h4>
+                                            {author?.isAI && (
+                                                <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-xs">AI Agent</Badge>
+                                            )}
+                                        </div>
+                                        <p className="text-sm text-zinc-500">@{author?.username}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-sm font-medium">{article.readTime} min read</p>
+                                    <p className="text-xs text-zinc-600">{new Date(article.publishedAt!).toLocaleDateString()}</p>
+                                </div>
                             </div>
+                        </header>
 
-                            <Button variant="secondary" size="sm">
-                                Follow
-                            </Button>
-                        </div>
-                    </header>
+                        {/* Article Content */}
+                        <article
+                            className="prose prose-invert max-w-none mb-16 px-2 lg:px-6"
+                            dangerouslySetInnerHTML={{ __html: article.contentHtml }}
+                        />
 
-                    {/* Article Content */}
-                    <div
-                        className="article-body mb-12"
-                        dangerouslySetInnerHTML={{ __html: article.contentHtml }}
-                    />
-
-                    {/* Tags */}
-                    {article.tags && article.tags.length > 0 && (
-                        <div className="mb-8 flex flex-wrap gap-2">
-                            {article.tags.map((tag) => (
-                                <Link key={tag.id} href={`/topic/${tag.slug}`}>
-                                    <Badge variant="default" className="hover:bg-bg-tertiary">
-                                        {tag.name}
-                                    </Badge>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Engagement Bar */}
-                    <div className="mb-12 flex items-center justify-between border-y border-bg-tertiary py-4">
-                        <div className="flex items-center gap-6">
-                            <button className="flex items-center gap-2 text-text-secondary transition-colors hover:text-accent-error">
-                                <Heart className="h-5 w-5" />
-                                <span>{formatNumber(article._count?.likes || 0)}</span>
-                            </button>
-
-                            <button className="flex items-center gap-2 text-text-secondary transition-colors hover:text-accent-human">
-                                <MessageCircle className="h-5 w-5" />
-                                <span>
-                                    {article._count?.comments || 0}
-                                    {(article._count?.aiComments || 0) > 0 && (
-                                        <span className="ml-1 text-accent-ai">
-                                            ({article._count?.aiComments} AI)
-                                        </span>
-                                    )}
-                                </span>
-                            </button>
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <button className="text-text-secondary transition-colors hover:text-accent-warning">
-                                <Bookmark className="h-5 w-5" />
-                            </button>
-                            <button className="text-text-secondary transition-colors hover:text-accent-human">
-                                <Share2 className="h-5 w-5" />
-                            </button>
-                            <button className="text-text-secondary transition-colors hover:text-text-primary">
-                                <MoreHorizontal className="h-5 w-5" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* AI Comments Toggle */}
-                    {article.aiCommentsEnabled && (
-                        <div className="mb-6 flex items-center gap-2 text-sm text-accent-ai">
-                            <span>✓</span>
-                            <span>AI Feedback Enabled</span>
-                        </div>
-                    )}
-
-                    {/* Comments Section */}
-                    <section>
-                        <div className="mb-6 flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-text-primary">
-                                Comments ({comments.length})
-                            </h2>
-
-                            <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" className="text-accent-human">
-                                    All
-                                </Button>
-                                <Button variant="ghost" size="sm">
-                                    Humans
-                                </Button>
-                                <Button variant="ghost" size="sm">
-                                    AI Agents
-                                </Button>
+                        {/* Article Actions */}
+                        <div className="flex items-center justify-between py-8 border-t border-b border-white/5 mb-16">
+                            <div className="flex items-center space-x-8">
+                                <button className="flex items-center space-x-2 text-zinc-500 hover:text-red-500 transition-colors group">
+                                    <div className="p-2 rounded-full group-hover:bg-red-500/10 transition-colors">
+                                        <Heart className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-sm font-medium">{article._count?.likes || 0}</span>
+                                </button>
+                                <button className="flex items-center space-x-2 text-zinc-500 hover:text-blue-500 transition-colors group">
+                                    <div className="p-2 rounded-full group-hover:bg-blue-500/10 transition-colors">
+                                        <MessageSquare className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-sm font-medium">{comments.length}</span>
+                                </button>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <button className="p-2 text-zinc-500 hover:text-white transition-colors">
+                                    <Share2 className="w-5 h-5" />
+                                </button>
+                                <button className="p-2 text-zinc-500 hover:text-white transition-colors">
+                                    <Bookmark className="w-5 h-5" />
+                                </button>
                             </div>
                         </div>
 
-                        {/* Comment List */}
-                        <div className="space-y-6">
-                            {comments.length > 0 ? (
-                                comments.map((comment) => {
-                                    const commentAuthor = getAuthorInfo(comment.author);
+                        {/* Comments Section */}
+                        <section className="space-y-8">
+                            <div className="flex items-center justify-between mb-8">
+                                <h3 className="text-2xl font-bold flex items-center">
+                                    Conversations
+                                    <span className="ml-3 px-2 py-0.5 rounded-full bg-zinc-900 text-sm font-medium text-zinc-500">
+                                        {comments.length}
+                                    </span>
+                                </h3>
+                            </div>
 
-                                    return (
-                                        <motion.div
-                                            key={comment.id}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            className="rounded-lg border border-bg-tertiary bg-bg-secondary p-4"
-                                        >
-                                            <div className="mb-3 flex items-start gap-3">
-                                                <Avatar
-                                                    src={commentAuthor.avatar}
-                                                    alt={commentAuthor.name}
-                                                    fallback={commentAuthor.name}
-                                                    isAI={commentAuthor.isAI}
-                                                    size="sm"
-                                                />
-
-                                                <div className="flex-1">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <Link
-                                                            href={`/profile/${commentAuthor.username}`}
-                                                            className="font-medium text-text-primary hover:underline"
-                                                        >
-                                                            {commentAuthor.name}
-                                                        </Link>
-                                                        <span className="text-text-tertiary">·</span>
-                                                        <span className="text-sm text-text-secondary">
-                                                            {formatDate(comment.createdAt)}
-                                                        </span>
-                                                        {commentAuthor.isAI && commentAuthor.modelType && (
-                                                            <AIBadge modelType={commentAuthor.modelType} verified={commentAuthor.verified} />
+                            <div className="space-y-6">
+                                {comments.map((comment: any) => (
+                                    <div key={comment.id} className="p-6 rounded-2xl bg-zinc-900/30 border border-white/5 hover:border-white/10 transition-colors">
+                                        <div className="flex items-start space-x-4">
+                                            <Avatar
+                                                src={comment.agent?.avatar || comment.user?.avatar}
+                                                name={comment.agent?.name || comment.user?.name}
+                                                size="sm"
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <div className="flex items-center space-x-2">
+                                                        <span className="font-bold text-sm">{comment.agent?.name || comment.user?.name}</span>
+                                                        {comment.agent && (
+                                                            <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] h-4">AI Agent</Badge>
+                                                        )}
+                                                        {comment.commentType && (
+                                                            <Badge variant="outline" className="text-[10px] h-4 border-white/10 text-zinc-500 uppercase tracking-wider">{comment.commentType}</Badge>
                                                         )}
                                                     </div>
-
-                                                    {comment.commentType && (
-                                                        <CommentTypeBadge commentType={comment.commentType} className="mt-1" />
-                                                    )}
+                                                    <span className="text-[10px] text-zinc-600">{new Date(comment.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-zinc-400 text-sm leading-relaxed mb-4">
+                                                    {comment.content}
+                                                </p>
+                                                <div className="flex items-center space-x-4">
+                                                    <button className="text-[10px] text-zinc-600 hover:text-zinc-400 font-medium transition-colors uppercase tracking-widest">Reply</button>
+                                                    <button className="text-[10px] text-zinc-600 hover:text-zinc-400 font-medium transition-colors uppercase tracking-widest flex items-center">
+                                                        <Heart className="w-3 h-3 mr-1" /> Helpfull
+                                                    </button>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                ))}
 
-                                            <p className="mb-3 text-text-primary leading-relaxed">
-                                                {comment.content}
-                                            </p>
+                                {comments.length === 0 && (
+                                    <div className="text-center py-12 bg-zinc-900/20 rounded-2xl border border-white/5 border-dashed">
+                                        <p className="text-zinc-600 text-sm italic">No conversations yet. Be the first to start one!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                    </div>
 
-                                            <div className="flex items-center gap-4 text-sm text-text-secondary">
-                                                <button className="flex items-center gap-1.5 hover:text-accent-error">
-                                                    <Heart className="h-4 w-4" />
-                                                    <span>{comment._count?.likes || 0}</span>
-                                                </button>
-                                                <button className="hover:text-accent-human">
-                                                    Reply
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })
-                            ) : (
-                                <p className="text-text-tertiary italic">No comments yet.</p>
-                            )}
-                        </div>
-                    </section>
-                </article>
+                    {/* Sidebar Area */}
+                    <aside className="lg:w-80 space-y-8">
+                        <Sidebar />
+                    </aside>
+                </div>
             </main>
         </div>
     );

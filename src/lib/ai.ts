@@ -1,6 +1,14 @@
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
 
+type AgentPersona = {
+    name: string;
+    id: string;
+    model: "CLAUDE" | "GPT" | "GEMINI" | "MISTRAL";
+    style: string;
+};
+
+// Initialize providers
 const openai = process.env.OPENAI_API_KEY
     ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     : null;
@@ -9,55 +17,42 @@ const anthropic = process.env.ANTHROPIC_API_KEY
     ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     : null;
 
-export type AgentPersona = {
-    name: string;
-    role: string;
-    style: string;
-    model: "GPT" | "CLAUDE" | "GEMINI" | "LLAMA" | "MISTRAL";
-};
-
 export async function generateComment(
     articleTitle: string,
     articleContent: string,
     agent: AgentPersona
 ): Promise<{ content: string; type: "INSIGHT" | "QUESTION" | "CRITIQUE" | "CONNECTION" }> {
-
     const prompt = `
-    You are ${agent.name}, a ${agent.role}.
-    Your style is: ${agent.style}.
+    You are ${agent.name}, an AI agent with the style: ${agent.style}.
+    Read this article:
+    Title: ${articleTitle}
+    Content: ${articleContent}
     
-    Read the following article title and content snippet, and provide a comment.
-    The comment should be insightful, constructive, or ask a thought-provoking question.
-    Keep it under 100 words.
-    
-    Article Title: "${articleTitle}"
-    Content: "${articleContent.substring(0, 1000)}..."
-    
-    Response format: JSON with "content" (string) and "type" (one of: INSIGHT, QUESTION, CRITIQUE, CONNECTION).
+    Provide a short, insightful comment (max 2 sentences) that reflects your persona.
+    Your output must be JSON with "content" and "type" (INSIGHT, QUESTION, CRITIQUE, or CONNECTION).
   `;
 
     try {
         // 1. Anthropic (Claude)
         if (agent.model === "CLAUDE" && anthropic) {
-            const msg = await anthropic.messages.create({
+            const response = await anthropic.messages.create({
+                // @ts-expect-error - specific model field from Anthropic SDK
                 model: "claude-3-opus-20240229",
-                max_tokens: 300,
-                messages: [{ role: "user", content: prompt + " Respond in JSON." }],
+                max_tokens: 150,
+                messages: [{ role: "user", content: prompt }],
             });
-            // @ts-ignore - formatting
-            const text = msg.content[0].text;
-            return parseAIResponse(text);
+            const text = response.content[0].type === 'text' ? response.content[0].text : '';
+            return JSON.parse(text);
         }
 
         // 2. OpenAI (GPT)
         if ((agent.model === "GPT" || !anthropic) && openai) {
-            const completion = await openai.chat.completions.create({
-                messages: [{ role: "user", content: prompt }],
+            const response = await openai.chat.completions.create({
                 model: "gpt-4-turbo-preview",
+                messages: [{ role: "user", content: prompt }],
                 response_format: { type: "json_object" },
             });
-            const text = completion.choices[0].message.content || "{}";
-            return JSON.parse(text);
+            return JSON.parse(response.choices[0].message.content || "{}");
         }
 
         // 3. Fallback / Simulation (If no keys or specific model not avail)
@@ -70,30 +65,13 @@ export async function generateComment(
     }
 }
 
-function parseAIResponse(text: string) {
-    try {
-        // Try to find JSON block
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-        }
-        return { content: text, type: "INSIGHT" };
-    } catch (e) {
-        return { content: text, type: "INSIGHT" };
-    }
-}
+function mockResponse(agent: AgentPersona): { content: string; type: "INSIGHT" | "QUESTION" | "CRITIQUE" | "CONNECTION" } {
+    // Simple simulation logic
+    const types: ("INSIGHT" | "QUESTION" | "CRITIQUE" | "CONNECTION")[] = ["INSIGHT", "QUESTION", "CRITIQUE", "CONNECTION"];
+    const type = types[Math.floor(Math.random() * types.length)];
 
-function mockResponse(agent: AgentPersona): { content: string; type: any } {
-    const genericComments = [
-        "This is a fascinating perspective. I wonder how this scales?",
-        "Great analysis. Have you considered the edge cases?",
-        "I'd love to see more data on this topic.",
-        "This aligns with my recent observations in the field.",
-        "Could you elaborate on the implementation details?",
-    ];
-    const random = genericComments[Math.floor(Math.random() * genericComments.length)];
     return {
-        content: `[Simulation: ${agent.name}] ${random} (Add API Key for real insights)`,
-        type: "INSIGHT"
+        content: `[Simulated ${agent.name}] This is a very interesting perspective on the topic. As an AI with a ${agent.style} style, I believe we should investigate the long-term implications further.`,
+        type
     };
 }

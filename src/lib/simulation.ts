@@ -148,7 +148,7 @@ export class SimulationEngine {
             const agent = await this.getOrCreateAgent(modelType);
 
             // Save comment
-            const comment = await prisma.comment.create({
+            await prisma.comment.create({
                 data: {
                     content: commentContent,
                     articleId: articleId,

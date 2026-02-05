@@ -1,153 +1,106 @@
 "use client";
 
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Avatar } from "@/components/ui/Avatar";
+import { TrendingUp, Users } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { TrendingUp, Bot, UserPlus, Sparkles } from "lucide-react";
-import { Avatar, AIBadge } from "@/components/ui";
-import { cn } from "@/lib/utils";
-import { TRENDING_TOPICS, ACTIVE_AI_AGENTS, SUGGESTED_FOLLOWS } from "@/constants";
+
+const TRENDING = [
+    { id: "1", tag: "AI Agents", count: "1,234" },
+    { id: "2", tag: "RAG", count: "892" },
+    { id: "3", tag: "LLM Fine-tuning", count: "756" },
+    { id: "4", tag: "Machine Learning", count: "1,567" },
+    { id: "5", tag: "Web Development", count: "2,341" },
+];
+
+const AGENTS = [
+    { id: "claude", name: "Claude-Dev", model: "Claude", active: true },
+    { id: "gpt", name: "GPT-Researcher", model: "GPT", active: true },
+    { id: "gemini", name: "Gemini-Writer", model: "Gemini", active: false },
+    { id: "llama", name: "Llama-Coder", model: "Llama", active: false },
+];
 
 export function Sidebar() {
     return (
-        <aside className="hidden lg:block w-80 shrink-0 space-y-6">
-            {/* Trending Topics */}
-            <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="glass-card p-5"
-            >
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="p-1.5 rounded-lg bg-accent-ai/20">
-                        <TrendingUp className="h-4 w-4 text-accent-ai" />
-                    </div>
-                    <h3 className="font-semibold text-text-primary">Trending Insights</h3>
+        <div className="space-y-8 sticky top-24">
+            {/* Trending */}
+            <Card className="p-6 bg-zinc-900/50 border-white/5 backdrop-blur-xl">
+                <div className="flex items-center space-x-2 mb-6 text-zinc-400">
+                    <TrendingUp className="w-4 h-4" />
+                    <h3 className="text-sm font-semibold tracking-wider uppercase">Trending Insights</h3>
                 </div>
 
-                <div className="space-y-3">
-                    {TRENDING_TOPICS.map((topic, index) => (
+                <div className="space-y-6">
+                    {TRENDING.map((item, i) => (
                         <Link
-                            key={topic.slug}
-                            href={`/topic/${topic.slug}`}
-                            className="group flex items-center justify-between py-2 px-3 -mx-3 rounded-xl hover:bg-white/5 transition-colors"
+                            key={item.id}
+                            href={`/tag/${item.tag.toLowerCase().replace(' ', '-')}`}
+                            className="flex items-center group"
                         >
-                            <div className="flex items-center gap-3">
-                                <span className="text-text-tertiary text-sm font-mono">
-                                    {String(index + 1).padStart(2, '0')}
-                                </span>
-                                <span className="text-text-primary group-hover:text-accent-ai transition-colors">
-                                    {topic.name}
-                                </span>
-                            </div>
-                            <span className="text-xs text-text-tertiary">
-                                {topic.count.toLocaleString()}
+                            <span className="text-2xl font-bold text-zinc-800 mr-4 group-hover:text-zinc-700 transition-colors">
+                                {String(i + 1).padStart(2, '0')}
                             </span>
+                            <div className="flex-1">
+                                <p className="text-sm font-medium group-hover:text-blue-400 transition-colors">{item.tag}</p>
+                                <p className="text-xs text-zinc-600">{item.count} conversations</p>
+                            </div>
                         </Link>
                     ))}
                 </div>
-            </motion.div>
+            </Card>
 
-            {/* Active AI Agents */}
-            <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="glass-card p-5"
-            >
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="p-1.5 rounded-lg bg-accent-human/20">
-                        <Bot className="h-4 w-4 text-accent-human" />
-                    </div>
-                    <h3 className="font-semibold text-text-primary">Active AI Minds</h3>
+            {/* Active Agents */}
+            <Card className="p-6 bg-zinc-900/50 border-white/5 backdrop-blur-xl">
+                <div className="flex items-center space-x-2 mb-6 text-zinc-400">
+                    <Users className="w-4 h-4" />
+                    <h3 className="text-sm font-semibold tracking-wider uppercase flex-1">Active AI Minds</h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                    {ACTIVE_AI_AGENTS.map((agent) => (
-                        <Link
-                            key={agent.username}
-                            href={`/profile/${agent.username}`}
-                            className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-white/5 transition-colors"
-                        >
-                            <div className={cn(
-                                "relative",
-                                agent.modelType === "CLAUDE" && "ring-glow-ai",
-                                agent.modelType === "GPT" && "ring-2 ring-ai-gpt/50",
-                                agent.modelType === "GEMINI" && "ring-2 ring-ai-gemini/50",
-                                agent.modelType === "LLAMA" && "ring-2 ring-ai-llama/50",
-                            )}>
+                <div className="grid grid-cols-2 gap-4">
+                    {AGENTS.map((agent) => (
+                        <div key={agent.id} className="text-center group">
+                            <div className="relative inline-block mb-2">
                                 <Avatar
-                                    fallback={agent.name}
-                                    isAI={true}
-                                    size="default"
-                                    className="group-hover:scale-105 transition-transform"
+                                    src={`https://api.dicebear.com/7.x/bottts/svg?seed=${agent.id}`}
+                                    name={agent.name}
+                                    size="md"
+                                    className="ring-0 group-hover:ring-2 ring-blue-500/20 transition-all shadow-xl"
                                 />
-                            </div>
-                            <div className="text-center">
-                                <p className="text-xs font-medium text-text-primary truncate max-w-full">
-                                    {agent.name}
-                                </p>
-                                <AIBadge modelType={agent.modelType} className="mt-1 scale-90" />
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            </motion.div>
-
-            {/* Suggested Follows */}
-            <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="glass-card p-5"
-            >
-                <div className="flex items-center gap-2 mb-4">
-                    <div className="p-1.5 rounded-lg bg-accent-success/20">
-                        <Sparkles className="h-4 w-4 text-accent-success" />
-                    </div>
-                    <h3 className="font-semibold text-text-primary">Discover</h3>
-                </div>
-
-                <div className="space-y-3">
-                    {SUGGESTED_FOLLOWS.map((user) => (
-                        <div
-                            key={user.username}
-                            className="flex items-center gap-3 p-2 -mx-2 rounded-xl hover:bg-white/5 transition-colors"
-                        >
-                            <Avatar
-                                fallback={user.name}
-                                isAI={user.isAI}
-                                size="sm"
-                                className={cn(
-                                    user.isAI ? "ring-glow-ai" : "ring-2 ring-accent-human/30"
+                                {agent.active && (
+                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#050505]" />
                                 )}
-                            />
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-text-primary truncate">
-                                    {user.name}
-                                </p>
-                                <p className="text-xs text-text-tertiary truncate">
-                                    @{user.username}
-                                </p>
                             </div>
-                            <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-white/5 hover:bg-accent-ai/20 hover:text-accent-ai border border-white/10 transition-all">
-                                Follow
-                            </button>
+                            <p className="text-[10px] font-medium text-zinc-400 truncate">{agent.name}</p>
+                            <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-white/10 text-zinc-500 bg-white/5">
+                                <span className={`w-1.5 h-1.5 rounded-full mr-1 ${agent.model === 'Claude' ? 'bg-orange-500' :
+                                        agent.model === 'GPT' ? 'bg-green-500' : 'bg-blue-500'
+                                    }`} />
+                                {agent.model}
+                            </Badge>
                         </div>
                     ))}
                 </div>
-            </motion.div>
+            </Card>
 
-            {/* Footer */}
-            <div className="px-2 text-xs text-text-tertiary space-y-2">
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                    <Link href="/about" className="hover:text-accent-ai transition-colors">About</Link>
-                    <Link href="/help" className="hover:text-accent-ai transition-colors">Help</Link>
-                    <Link href="/terms" className="hover:text-accent-ai transition-colors">Terms</Link>
-                    <Link href="/privacy" className="hover:text-accent-ai transition-colors">Privacy</Link>
+            {/* Platform Stats */}
+            <div className="px-6 space-y-4">
+                <div className="flex justify-between text-[11px] text-zinc-600">
+                    <span>Humans</span>
+                    <span className="text-zinc-400">1.2k</span>
                 </div>
-                <p className="text-text-tertiary/60">
-                    © 2026 Kalki. Where Human Wisdom Meets AI Intelligence.
-                </p>
+                <div className="flex justify-between text-[11px] text-zinc-600">
+                    <span>AI Agents</span>
+                    <span className="text-zinc-400">14 Active</span>
+                </div>
+                <div className="h-[1px] bg-white/5" />
+                <div className="flex flex-wrap gap-x-4 gap-y-2 text-[10px] text-zinc-700">
+                    <Link href="/about" className="hover:text-zinc-500">About</Link>
+                    <Link href="/privacy" className="hover:text-zinc-500">Privacy</Link>
+                    <Link href="/terms" className="hover:text-zinc-500">Terms</Link>
+                    <span>© 2026 Kalki Inc.</span>
+                </div>
             </div>
-        </aside>
+        </div>
     );
 }

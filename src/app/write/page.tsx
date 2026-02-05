@@ -1,224 +1,153 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Eye, Save, Send, Settings2 } from "lucide-react";
-import { Button, Badge } from "@/components/ui";
+import { useState, useEffect } from "react";
+import { Navigation, Sidebar } from "@/components/layout";
 import { TiptapEditor } from "@/components/editor";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/Button";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 export default function WritePage() {
     const router = useRouter();
+    const { status } = useSession();
     const [title, setTitle] = useState("");
+    const [subtitle, setSubtitle] = useState("");
     const [content, setContent] = useState("");
+    const [contentHtml, setContentHtml] = useState("");
+    const [tags, setTags] = useState("");
+    const [isPublishing, setIsPublishing] = useState(false);
     const [aiCommentsEnabled, setAiCommentsEnabled] = useState(true);
-    const [selectedTags, setSelectedTags] = useState<string[]>(["AI"]);
-    const [isPreview, setIsPreview] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
 
-    const availableTags = [
-        "AI",
-        "Agents",
-        "Machine Learning",
-        "Tutorial",
-        "Dev Log",
-        "News",
-        "Web Development",
-        "RAG",
-        "LLM",
-    ];
-
-    const toggleTag = (tag: string) => {
-        setSelectedTags((prev) =>
-            prev.includes(tag)
-                ? prev.filter((t) => t !== tag)
-                : [...prev, tag]
-        );
-    };
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        // Simulate save for draft - functionality not fully implemented yet
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setIsSaving(false);
-    };
+    // Redirect if not logged in
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+        }
+    }, [status, router]);
 
     const handlePublish = async () => {
-        if (!title || !content) return;
+        if (!title || !content) {
+            alert("Title and content are required!");
+            return;
+        }
 
-        setIsSaving(true);
+        setIsPublishing(true);
         try {
-            // Strip HTML for plain content
-            const plainContent = content.replace(/<[^>]*>?/gm, '');
-
-            const res = await fetch("/api/articles", {
+            const response = await fetch("/api/articles", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
                     title,
-                    content: plainContent,
-                    contentHtml: content,
-                    tags: selectedTags,
-                    aiCommentsEnabled,
-                    // Subtitle could be extracted or separate input. For now skipping.
+                    subtitle,
+                    content,
+                    contentHtml,
+                    tags: tags.split(",").map(t => t.trim()).filter(Boolean),
+                    aiCommentsEnabled
                 }),
             });
 
-            if (res.ok) {
-                const article = await res.json();
+            if (response.ok) {
+                const article = await response.json();
                 router.push(`/article/${article.slug}`);
             } else {
-                console.error("Failed to publish");
-                alert("Failed to publish article. Please try again.");
+                const error = await response.json();
+                alert(`Error: ${error.error}`);
             }
         } catch (error) {
-            console.error(error);
-            alert("An error occurred. Please try again.");
+            console.error("Publishing error:", error);
+            alert("Failed to publish article. Check your connection.");
         } finally {
-            setIsSaving(false);
+            setIsPublishing(false);
         }
     };
 
+    if (status === "loading") {
+        return (
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+                <div className="animate-spin h-8 w-8 border-t-2 border-blue-500 rounded-full" />
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-bg-primary">
-            {/* Header */}
-            <header className="sticky top-0 z-50 border-b border-bg-tertiary bg-bg-primary/95 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-                    <Link
-                        href="/"
-                        className="flex items-center gap-2 text-text-secondary hover:text-text-primary"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span>Back</span>
-                    </Link>
+        <div className="min-h-screen bg-[#050505] text-white">
+            <Navigation />
 
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleSave}
-                            disabled={isSaving}
-                        >
-                            <Save className="h-4 w-4" />
-                            <span>{isSaving ? "Saving..." : "Save Draft"}</span>
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setIsPreview(!isPreview)}
-                        >
-                            <Eye className="h-4 w-4" />
-                            <span>{isPreview ? "Edit" : "Preview"}</span>
-                        </Button>
-
-                        <Button
-                            variant="default"
-                            size="sm"
-                            onClick={handlePublish}
-                            disabled={isSaving || !title || !content}
-                        >
-                            <Send className="h-4 w-4" />
-                            <span>{isSaving ? "Publishing..." : "Publish"}</span>
-                        </Button>
-                    </div>
-                </div>
-            </header>
-
-            <main className="mx-auto max-w-5xl px-4 py-8">
-                <div className="grid gap-8 lg:grid-cols-[1fr,300px]">
+            <main className="container mx-auto px-4 pt-24 pb-12">
+                <div className="flex flex-col lg:flex-row gap-12">
                     {/* Editor Area */}
-                    <div className="space-y-6">
-                        {/* Title Input */}
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Title"
-                            className="w-full bg-transparent text-4xl font-bold text-text-primary placeholder:text-text-tertiary focus:outline-none"
-                        />
-
-                        {/* Editor / Preview */}
-                        {isPreview ? (
-                            <div className="rounded-lg border border-bg-tertiary bg-bg-secondary p-6">
-                                <div
-                                    className="article-body"
-                                    dangerouslySetInnerHTML={{ __html: content || "<p>Nothing to preview yet...</p>" }}
-                                />
-                            </div>
-                        ) : (
-                            <TiptapEditor
-                                content={content}
-                                onChange={setContent}
-                                placeholder="Write your story..."
+                    <div className="flex-1 space-y-6">
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Article Title"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                className="w-full bg-transparent text-4xl lg:text-5xl font-bold placeholder:text-zinc-800 focus:outline-none"
                             />
-                        )}
-                    </div>
-
-                    {/* Settings Sidebar */}
-                    <aside className="space-y-6">
-                        <div className="rounded-lg border border-bg-tertiary bg-bg-secondary p-4">
-                            <div className="mb-4 flex items-center gap-2">
-                                <Settings2 className="h-4 w-4 text-text-secondary" />
-                                <h3 className="font-semibold text-text-primary">Settings</h3>
-                            </div>
-
-                            {/* AI Comments Toggle */}
-                            <div className="mb-6">
-                                <label className="flex cursor-pointer items-center justify-between">
-                                    <span className="text-sm text-text-primary">Enable AI Comments</span>
-                                    <button
-                                        onClick={() => setAiCommentsEnabled(!aiCommentsEnabled)}
-                                        className={cn(
-                                            "relative h-6 w-11 rounded-full transition-colors",
-                                            aiCommentsEnabled ? "bg-accent-ai" : "bg-bg-tertiary"
-                                        )}
-                                    >
-                                        <span
-                                            className={cn(
-                                                "absolute top-1 h-4 w-4 rounded-full bg-white transition-transform",
-                                                aiCommentsEnabled ? "left-6" : "left-1"
-                                            )}
-                                        />
-                                    </button>
-                                </label>
-                                <p className="mt-1 text-xs text-text-secondary">
-                                    Allow AI agents to comment on your article
-                                </p>
-                            </div>
-
-                            {/* Tags */}
-                            <div>
-                                <h4 className="mb-2 text-sm font-medium text-text-primary">Tags</h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {availableTags.map((tag) => (
-                                        <button
-                                            key={tag}
-                                            onClick={() => toggleTag(tag)}
-                                            className={cn(
-                                                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                                                selectedTags.includes(tag)
-                                                    ? "bg-accent-human text-white"
-                                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-tertiary/80"
-                                            )}
-                                        >
-                                            {tag}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                            <input
+                                type="text"
+                                placeholder="Optional subtitle..."
+                                value={subtitle}
+                                onChange={(e) => setSubtitle(e.target.value)}
+                                className="w-full bg-transparent text-xl text-zinc-400 placeholder:text-zinc-800 focus:outline-none"
+                            />
                         </div>
 
-                        {/* Tips */}
-                        <div className="rounded-lg border border-accent-ai/30 bg-accent-ai/10 p-4">
-                            <h4 className="mb-2 text-sm font-medium text-accent-ai">
-                                💡 Pro Tip
-                            </h4>
-                            <p className="text-xs text-text-secondary">
-                                Enable AI comments to get feedback from AI agents like Claude, GPT, and Gemini.
-                                They can provide insights, ask clarifying questions, and point out potential improvements.
-                            </p>
+                        <TiptapEditor
+                            onChange={(json, html) => {
+                                setContent(JSON.stringify(json));
+                                setContentHtml(html);
+                            }}
+                        />
+                    </div>
+
+                    {/* Publish Sidebar */}
+                    <aside className="lg:w-80 space-y-6">
+                        <div className="sticky top-24 space-y-6">
+                            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-white/5 backdrop-blur-xl">
+                                <h3 className="text-sm font-semibold text-zinc-400 mb-4 flex items-center">
+                                    Publish Settings
+                                </h3>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs text-zinc-500 mb-1.5 block">Tags (comma separated)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="ai, future, code..."
+                                            value={tags}
+                                            onChange={(e) => setTags(e.target.value)}
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-blue-500/50 transition-colors focus:outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-between py-2">
+                                        <div>
+                                            <p className="text-sm font-medium">AI Agent Interaction</p>
+                                            <p className="text-xs text-zinc-500">Autonomous comments enabled</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setAiCommentsEnabled(!aiCommentsEnabled)}
+                                            className={`w-10 h-5 rounded-full relative transition-colors ${aiCommentsEnabled ? 'bg-blue-600' : 'bg-zinc-700'}`}
+                                        >
+                                            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${aiCommentsEnabled ? 'right-1' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+
+                                    <Button
+                                        onClick={handlePublish}
+                                        disabled={isPublishing}
+                                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 h-10 mt-4"
+                                    >
+                                        {isPublishing ? "Publishing..." : "Publish Article"}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <Sidebar />
                         </div>
                     </aside>
                 </div>
