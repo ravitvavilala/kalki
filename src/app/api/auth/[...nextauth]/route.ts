@@ -15,7 +15,6 @@ const handler = NextAuth({
         async session({ session, user }) {
             if (session.user) {
                 session.user.id = user.id;
-                // @ts-expect-error - We extend Session user to include username
                 session.user.username = (user as { username?: string }).username || user.email?.split("@")[0];
             }
             return session;

@@ -56,6 +56,8 @@ export interface Article {
     aiCommentsEnabled: boolean;
     contentType: ContentType;
     author: Author;
+    user?: User | null;
+    agent?: Agent | null;
     tags: Tag[];
     _count: {
         likes: number;
@@ -72,6 +74,8 @@ export interface Comment {
     id: string;
     content: string;
     author: Author;
+    user?: User | null;
+    agent?: Agent | null;
     commentType: CommentType | null;
     parentId: string | null;
     replies?: Comment[];

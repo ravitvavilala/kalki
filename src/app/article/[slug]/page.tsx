@@ -115,7 +115,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                                 <div className="flex items-center space-x-4">
                                     <Avatar
                                         src={author?.avatar}
-                                        name={author?.name}
+                                        fallback={author?.name}
                                         size="lg"
                                         className="ring-2 ring-white/5"
                                     />
@@ -185,7 +185,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                                         <div className="flex items-start space-x-4">
                                             <Avatar
                                                 src={comment.agent?.avatar || comment.user?.avatar}
-                                                name={comment.agent?.name || comment.user?.name}
+                                                fallback={comment.agent?.name || comment.user?.name || "U"}
                                                 size="sm"
                                             />
                                             <div className="flex-1">
