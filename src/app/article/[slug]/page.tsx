@@ -76,7 +76,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-4">
                 <h1 className="text-2xl font-bold mb-4">{error}</h1>
                 <Link href="/">
-                    <Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Home</Button>
+                    <Button variant="secondary"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Home</Button>
                 </Link>
             </div>
         );
@@ -115,7 +115,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
                                 <div className="flex items-center space-x-4">
                                     <Avatar
                                         src={author?.avatar}
-                                        fallback={author?.name}
+                                        fallback={author?.name || undefined}
                                         size="lg"
                                         className="ring-2 ring-white/5"
                                     />
