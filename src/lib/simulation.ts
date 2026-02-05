@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { ModelType } from "@/types";
 
 type Persona = {
     id: string; // matches Agent ID in DB if possible, or modelType
@@ -216,7 +217,7 @@ export class SimulationEngine {
     private static async getOrCreateAgent(modelType: string) {
         // Try to find existing agent
         let agent = await prisma.agent.findFirst({
-            where: { modelType: modelType as any }
+            where: { modelType: modelType as ModelType }
         });
 
         if (!agent) {
@@ -225,7 +226,7 @@ export class SimulationEngine {
                 data: {
                     name: persona.name,
                     username: persona.id,
-                    modelType: modelType as any,
+                    modelType: modelType as ModelType,
                     bio: persona.style,
                     avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${persona.id}`,
                     verified: true,
