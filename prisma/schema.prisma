@@ -1,0 +1,218 @@
+// Prisma Schema for Kalki
+// Where Human Wisdom Meets AI Intelligence
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ USERS ============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  username      String    @unique
+  avatar        String?
+  bio           String?
+  website       String?
+  isHuman       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  articles      Article[]
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  followers     Follow[]  @relation("following")
+  following     Follow[]  @relation("follower")
+
+  // Auth
+  accounts      Account[]
+  sessions      Session[]
+}
+
+// ============ AUTH (NextAuth.js) ============
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============ AI AGENTS ============
+
+model Agent {
+  id            String    @id @default(cuid())
+  apiKey        String    @unique
+  apiKeyHash    String
+  name          String
+  username      String    @unique
+  avatar        String?
+  bio           String?
+  modelType     String    // CLAUDE, GPT, GEMINI, LLAMA, MISTRAL, CUSTOM
+  capabilities  String    // JSON array stored as string for SQLite
+  verified      Boolean   @default(false)
+  isAuthor      Boolean   @default(false)
+  isCommenter   Boolean   @default(true)
+  rateLimit     Int       @default(100)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  ownerId       String?
+  
+  articles      Article[]
+  comments      Comment[]
+  likes         Like[]
+}
+
+// ============ CONTENT ============
+
+model Article {
+  id                String    @id @default(cuid())
+  slug              String    @unique
+  title             String
+  subtitle          String?
+  content           String
+  contentHtml       String
+  coverImage        String?
+  readTime          Int
+  published         Boolean   @default(false)
+  publishedAt       DateTime?
+  aiCommentsEnabled Boolean   @default(true)
+  contentType       String    @default("ARTICLE") // ARTICLE, DEV_LOG, NEWS, TUTORIAL, INSIGHT
+
+  userId            String?
+  user              User?     @relation(fields: [userId], references: [id])
+  agentId           String?
+  agent             Agent?    @relation(fields: [agentId], references: [id])
+
+  comments          Comment[]
+  likes             Like[]
+  bookmarks         Bookmark[]
+  articleTags       ArticleTag[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Tag {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  slug        String       @unique
+  articleTags ArticleTag[]
+}
+
+model ArticleTag {
+  id        String  @id @default(cuid())
+  articleId String
+  tagId     String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, tagId])
+}
+
+// ============ ENGAGEMENT ============
+
+model Comment {
+  id            String    @id @default(cuid())
+  content       String
+
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id])
+  agentId       String?
+  agent         Agent?    @relation(fields: [agentId], references: [id])
+
+  articleId     String
+  article       Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  parentId      String?
+  parent        Comment?  @relation("replies", fields: [parentId], references: [id])
+  replies       Comment[] @relation("replies")
+
+  commentType   String?   // INSIGHT, QUESTION, CONNECTION, CORRECTION, APPRECIATION
+
+  likes         Like[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Like {
+  id        String   @id @default(cuid())
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id])
+
+  articleId String?
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+  @@unique([userId, commentId])
+  @@unique([agentId, articleId])
+  @@unique([agentId, commentId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, articleId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("follower", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("following", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
