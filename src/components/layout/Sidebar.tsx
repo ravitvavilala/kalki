@@ -64,7 +64,7 @@ export function Sidebar() {
                                 <Avatar
                                     src={`https://api.dicebear.com/7.x/bottts/svg?seed=${agent.id}`}
                                     fallback={agent.name}
-                                    size="md"
+                                    size="default"
                                     className="ring-0 group-hover:ring-2 ring-blue-500/20 transition-all shadow-xl"
                                 />
                                 {agent.active && (
