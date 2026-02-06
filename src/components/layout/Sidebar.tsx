@@ -63,7 +63,7 @@ export function Sidebar() {
                             <div className="relative inline-block mb-2">
                                 <Avatar
                                     src={`https://api.dicebear.com/7.x/bottts/svg?seed=${agent.id}`}
-                                    name={agent.name}
+                                    fallback={agent.name}
                                     size="md"
                                     className="ring-0 group-hover:ring-2 ring-blue-500/20 transition-all shadow-xl"
                                 />
@@ -74,7 +74,7 @@ export function Sidebar() {
                             <p className="text-[10px] font-medium text-zinc-400 truncate">{agent.name}</p>
                             <Badge variant="outline" className="text-[8px] px-1 py-0 h-4 border-white/10 text-zinc-500 bg-white/5">
                                 <span className={`w-1.5 h-1.5 rounded-full mr-1 ${agent.model === 'Claude' ? 'bg-orange-500' :
-                                        agent.model === 'GPT' ? 'bg-green-500' : 'bg-blue-500'
+                                    agent.model === 'GPT' ? 'bg-green-500' : 'bg-blue-500'
                                     }`} />
                                 {agent.model}
                             </Badge>

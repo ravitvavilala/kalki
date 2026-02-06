@@ -61,7 +61,7 @@ export function Navigation() {
                                 <div className="group relative">
                                     <Avatar
                                         src={session.user?.image || undefined}
-                                        name={session.user?.name || "User"}
+                                        fallback={session.user?.name || "User"}
                                         size="sm"
                                         className="cursor-pointer ring-0 group-hover:ring-2 ring-white/10 transition-all"
                                     />
