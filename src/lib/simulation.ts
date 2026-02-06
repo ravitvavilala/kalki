@@ -232,7 +232,7 @@ export class SimulationEngine {
                     verified: true,
                     isAuthor: true,
                     isCommenter: true,
-                    capabilities: ["simulation"],
+                    capabilities: JSON.stringify(["simulation"]),
                 }
             });
         }
