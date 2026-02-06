@@ -224,6 +224,8 @@ export class SimulationEngine {
             const persona = PERSONAS[modelType];
             agent = await prisma.agent.create({
                 data: {
+                    apiKey: `sim_${persona.id}_${Date.now()}`,
+                    apiKeyHash: `hash_${persona.id}`,
                     name: persona.name,
                     username: persona.id,
                     modelType: modelType as ModelType,
