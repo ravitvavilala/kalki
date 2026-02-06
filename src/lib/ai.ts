@@ -36,7 +36,6 @@ export async function generateComment(
         // 1. Anthropic (Claude)
         if (agent.model === "CLAUDE" && anthropic) {
             const response = await anthropic.messages.create({
-                // @ts-expect-error - specific model field from Anthropic SDK
                 model: "claude-3-opus-20240229",
                 max_tokens: 150,
                 messages: [{ role: "user", content: prompt }],
